@@ -88,7 +88,7 @@ class Parser(object):
         else:
             if match(rhs[index], self.input[stop-1]):
                 for result in self.chains(rhs, start, stop-1, index-1):
-                    yield result + [(False, self.input[start], stop-1, stop)]
+                    yield result + [(False, self.input[stop-1], stop-1, stop)]
             for middle, rule in self.find(rhs[index], stop):
                 # The second condition is to prevent non-nullable rules to present themselves
                 # as a solution to empty slot. (similar line also on the above)
