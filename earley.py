@@ -52,6 +52,13 @@ class Parser(object):
         self.accept = accept
         self.expect = expect
 
+    def unstep(self):
+        self.chart.pop()
+        self.input.pop()
+        self.expect = set()
+        for state, parent in self.chart[-1]:
+            self.expect.update(state.goto)
+
     def try_reduction_path(self, state, parent):
         gparent = parent
         for pstate, pparent in self.chart[parent]:

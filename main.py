@@ -67,6 +67,7 @@ class CustomEditor(QtGui.QFrame):
 
         self.head = self.root.textcells([])[3].offset(0)
         self.tail = self.head
+        self.parsePosition(self.head)
 
     def parsePosition(self, position):
         cell = position.cell.parent
@@ -79,7 +80,8 @@ class CustomEditor(QtGui.QFrame):
             return
         parser = earley.parser(self.grammar, damaged.name)
 
-        for index in range(len(damaged)):
+        index = 0
+        while index < len(damaged):
             scell = damaged[index]
             if isinstance(scell, TextCell):
                 scell.name = 'symbol'
@@ -87,10 +89,13 @@ class CustomEditor(QtGui.QFrame):
                     scell.name = "plus"
                 if scell.text == '*':
                     scell.name = "star"
-
             if scell.name not in parser.expect and isinstance(scell, TextCell):
+                if len(parser.input) > 0 and not isinstance(parser.input[-1], TextCell):
+                    index -= 1
+                    parser.unstep()
+                    damaged[index].collapse()
+                    continue
                 if damaged.parent is None:
-                    print "cannot parse as", damaged.name
                     return
                 damaged.collapse()
                 return self.parsePosition(position)
@@ -102,7 +107,6 @@ class CustomEditor(QtGui.QFrame):
 
         if not parser.accept:
             if damaged.parent is None:
-                print "cannot parse as", damaged.name
                 return
             damaged.collapse()
             return self.parsePosition(position)
@@ -218,12 +222,14 @@ class CustomEditor(QtGui.QFrame):
             else:
                 _, self.head = self.head.collapse(self.tail)
             self.tail = self.head
+            self.parsePosition(self.head)
         elif e.key() == QtCore.Qt.Key_Backspace:
             if self.head == self.tail:
                 _, self.head = self.head.collapse(self.head - 1)
             else:
                 _, self.head = self.head.collapse(self.tail)
             self.tail = self.head
+            self.parsePosition(self.head)
         elif e.key() == QtCore.Qt.Key_Space:
             if self.head != self.tail:
                 _, self.head = self.head.collapse(self.tail)
@@ -232,6 +238,7 @@ class CustomEditor(QtGui.QFrame):
             else:
                 self.head, _ = self.head.split()
             self.tail = self.head
+            self.parsePosition(self.head)
         elif e.key() == QtCore.Qt.Key_Left:
             self.head = self.head - 1
             if not e.modifiers() & QtCore.Qt.ShiftModifier:
@@ -243,6 +250,7 @@ class CustomEditor(QtGui.QFrame):
         else:
             _, self.head = self.head.put(e.text())
             self.tail = self.head
+            self.parsePosition(self.head)
         self.update()
         return QtGui.QFrame.keyPressEvent(self, e)
 #
